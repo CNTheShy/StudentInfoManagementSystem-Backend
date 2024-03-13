@@ -1,0 +1,50 @@
+package com.xust.sims.web.config;
+
+import com.alibaba.fastjson.JSONObject;
+import com.xust.sims.utils.CodeUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.GenericFilterBean;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+
+@Component
+@Slf4j
+public class CodeFilter extends GenericFilterBean {
+    private String defaultFilterProcessUrl = "/web/doLogin";
+
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
+        HttpServletResponse response = (HttpServletResponse) servletResponse;
+        logger.info("defaultFilterProcessUrl : " + request.getServletPath());
+        if (HttpMethod.POST.name().equalsIgnoreCase(request.getMethod()) && defaultFilterProcessUrl.equals(request.getServletPath())) {
+            //验证码验证
+            String requestCaptcha = request.getParameter("imageCode");
+            logger.info("Enter the verification code：" + request.getServletPath() + " : " + defaultFilterProcessUrl + " : " + requestCaptcha);
+            if (!CodeUtils.checkVerifyCode(request, requestCaptcha)) {
+                response.setStatus(405);
+                response.setContentType("application/json;charset=utf-8");
+                PrintWriter writer = response.getWriter();
+                JSONObject json = new JSONObject();
+                json.put("msg", "Incorrect verification code");
+                writer.write(json.toJSONString());
+                writer.flush();
+                writer.close();
+                return;
+            }
+        }
+        filterChain.doFilter(request, response);
+    }
+}
