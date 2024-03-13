@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xust.sims.dao.ClassMapper">
+
+    <sql id="classBaseInfoCols">
+        id, name, count
+    </sql>
+
+    <update id="updateClassSize">
+        UPDATE class
+        SET `count` = #{classSize}
+        WHERE id = #{classId}
+    </update>
+
+    <update id="reduceOneClassSizeByClassId">
+        UPDATE class
+        SET `count` = `count` - 1
+        WHERE id = #{classId}
+    </update>
+
+    <update id="updateClassSizePlusOne">
+        UPDATE class
+        SET `count` = `count` + 1
+        WHERE id = #{classId}
+    </update>
+
+    <insert id="enrollToClassById">
+        INSERT INTO student_class
+        (studentId, classId, courseId)
+        VALUES
+            (#{studentId}, #{classId}, #{courseId})
+    </insert>
+
+    <delete id="deleteClassById">
+        DELETE
+        FROM class
+        WHERE `key` = (SELECT `key` FROM (SELECT `key` FROM class WHERE `id` = #{classId} AND `courseId` = #{courseId}) AS temp)
+    </delete>
+
+    <resultMap id="classBaseInfoMap" type="class">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+    </resultMap>
+
+    <select id="findClassBaseInfoById" resultMap="classBaseInfoMap">
+        SELECT <include refid="classBaseInfoCols"/>
+        FROM class
+        WHERE id = #{id}
+    </select>
+
+    <select id="findClassByMajorId" resultType="class">
+        SELECT c.*
+        FROM class c
+            JOIN course co ON c.courseId = co.id
+            JOIN academy a ON co.academyId = a.id
+            JOIN academy_major am ON a.id = am.academyId
+        WHERE am.majorId = #{majorId}
+    </select>
+
+    <select id="findClassByCourseId" resultType="class">
+        SELECT *
+        FROM class
+        WHERE courseId = #{courseId}
+    </select>
+
+    <select id="getCountClass" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM class
+        WHERE courseId = #{courseId}
+    </select>
+
+    <insert id="addClass">
+        INSERT INTO class
+            (id, name, courseId)
+        VALUES (#{id}, #{name}, (SELECT id FROM Course WHERE name=#{name}))
+    </insert>
+
+
+    <select id="findClassIdByMajorNameAndClassName" resultType="java.lang.Integer">
+        SELECT class.id
+        FROM class
+        	JOIN course ON name = class.name
+        WHERE class.name = #{className}
+    </select>
+
+
+    <select id="findClassSizeByClassId" resultType="java.lang.Integer">
+        SELECT `count`
+        FROM class
+        WHERE id = #{classId}
+    </select>
+
+    <select id="findNotFullClassByCourseId" resultType="java.lang.Integer">
+        SELECT class.id
+        FROM class
+        WHERE class.courseId = #{classId} AND class.count  &lt;= (SELECT total FROM course WHERE course.id = #{classId})
+        ORDER BY CAST(class.id AS UNSIGNED) ASC
+        LIMIT 1
+    </select>
+</mapper>

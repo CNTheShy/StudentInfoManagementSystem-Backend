@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xust.sims.dao.ScoreMapper">
+
+    <sql id="scoreCols">
+        id, grade, examTime, updateTime,
+        studentId, courseId
+    </sql>
+
+    <sql id="scoreInsertOneCols">
+        id, courseId, studentId, grade, examTime
+    </sql>
+
+    <sql id="scoreInsertBatchCols">
+        id, courseId, studentId, grade, examTime, updateTime
+    </sql>
+
+    <insert id="insertOneScoreInfo" keyColumn="id">
+        INSERT INTO score
+        <trim prefix="(" suffix=")">
+            <include refid="scoreInsertOneCols"/>
+        </trim>
+        VALUES (#{id}, #{courseId}, #{studentId}, #{grade}, #{examTime})
+    </insert>
+
+    <insert id="insertBatchScoreInfos" parameterType="list">
+        INSERT INTO score
+        (id, courseId, studentId, grade, examTime, updateTime)
+        VALUES
+        <foreach collection="scoreExcelData" item="scoreInfo" separator=",">
+            (#{scoreInfo.id}, #{scoreInfo.courseId}, #{scoreInfo.studentId}, #{scoreInfo.grade},
+             #{scoreInfo.examTime}, NOW())
+        </foreach>
+    </insert>
+
+    <update id="updateScoreInfo">
+        UPDATE score
+        SET course = #{course.id}, student = #{student.id}, grade = #{grade}, examTime = #{examTime}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteScoreInfo">
+        DELETE
+        FROM score
+        WHERE id = #{id}
+        LIMIT 1
+    </delete>
+
+    <resultMap id="scoreBaseInfoMap" type="score">
+        <!-- 定义主键 -->
+        <id column="id" property="id"/>
+
+        <result column="grade" property="grade"/>
+        <result column="studentId" property="studentId"/>
+        <!-- 关联的课程对象 -->
+<!--        <association property="course" column="courseId" fetchType="eager"-->
+<!--                     select="com.xust.sims.dao.CourseMapper.findCourseIdByName"/>-->
+<!--        &lt;!&ndash; 关联的学生对象 &ndash;&gt;-->
+<!--        <association property="student" column="studentId" fetchType="eager"-->
+<!--                     select="com.xust.sims.dao.StudentMapper.findStudentByCondition"/>-->
+    </resultMap>
+
+    <select id="findScoreByCondition" resultMap="scoreBaseInfoMap">
+        SELECT
+        <include refid="scoreCols"/>
+        FROM score
+        <where>
+            <if test="id != null and id != ''">
+                AND id = #{id}
+            </if>
+
+            <if test="courseId != null  and courseId != ''">
+                AND courseId = #{courseId}
+            </if>
+            <if test="studentId != null  and studentId != ''">
+                AND studentId = #{studentId}
+            </if>
+
+            <if test="startTime != null   and endTime != null ">
+                AND date_format(examTime,'%Y-%m-%d') between date_format(#{startTime},'%Y-%m-%d') and date_format(#{endTime},'%Y-%m-%d')
+            </if>
+        </where>
+    </select>
+
+    <select id="findAllScoreByIds" resultMap="scoreBaseInfoMap">
+        SELECT
+        <include refid="scoreCols"/>
+        FROM score
+        WHERE id IN
+        <foreach collection="ids" item="id" separator="," open="(" close=")" index="idx">
+            #{id}
+        </foreach>
+    </select>
+
+
+    <select id="findScoreInfoById" resultMap="scoreBaseInfoMap">
+        SELECT <include refid="scoreCols"/>
+        FROM score
+        WHERE id = #{id}
+    </select>
+
+    <select id="findScoreInfoByStudentAndCourse" resultMap="scoreBaseInfoMap" parameterType="map">
+        SELECT
+        <include refid="scoreCols"/>
+        FROM score
+        WHERE studentId = #{studentId}
+        AND courseId = #{courseId}
+    </select>
+
+
+</mapper>

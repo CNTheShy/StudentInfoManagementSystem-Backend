@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xust.sims.dao.MajorMapper">
+
+    <sql id="majorBaseInfoCols">
+        id, name
+    </sql>
+
+    <insert id="addMajorInfo">
+
+    </insert>
+
+    <resultMap id="majorBaseInfoMap" type="major">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+    </resultMap>
+
+    <resultMap id="majorInfoDetails" type="Major">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <association property="classes" column="id" fetchType="eager"
+                     select="com.xust.sims.dao.ClassMapper.findClassByMajorId"/>
+    </resultMap>
+
+    <select id="findMajorBaseInfoById" resultMap="majorBaseInfoMap">
+        SELECT <include refid="majorBaseInfoCols"/>
+        FROM major
+        WHERE id = #{id}
+    </select>
+
+    <select id="findAllMajors" resultType="major">
+        SELECT <include refid="majorBaseInfoCols"/>
+        FROM major
+    </select>
+
+    <select id="findMajorsByAcademyId" resultType="major">
+        SELECT <include refid="majorBaseInfoCols"/>
+        FROM major INNER JOIN academy_major ON academy_major.majorId = major.id
+        WHERE academyId = #{academyId}
+    </select>
+
+    <select id="findMajorIdByName" resultType="java.lang.Integer">
+        SELECT id
+        FROM major
+        WHERE name = #{majorName}
+    </select>
+
+    <select id="findMajorsDetails" resultMap="majorInfoDetails">
+        SELECT major.*
+        FROM major LEFT JOIN academy_major ON id = majorId
+        WHERE academyId = #{academyId};
+    </select>
+
+    <select id="getStudentNumberByMajorId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM student
+        WHERE majorId = #{majorId};
+    </select>
+</mapper>
